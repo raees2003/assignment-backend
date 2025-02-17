@@ -1,0 +1,125 @@
+[33mcommit 044be4102a38ae17253d067fe0ebcd68b92a9a9f[m
+Author: Raees Shaikh <raeessk2003@gmail.com>
+Date:   Sun Feb 16 11:34:33 2025 +0530
+
+    LMS Assignment - Initial
+
+[1mdiff --git a/src/main/java/com/IMS/services/BookService.java b/src/main/java/com/IMS/services/BookService.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000..2748880[m
+[1m--- /dev/null[m
+[1m+++ b/src/main/java/com/IMS/services/BookService.java[m
+[36m@@ -0,0 +1,113 @@[m
+[32m+[m[32mpackage com.IMS.services;[m
+[32m+[m
+[32m+[m
+[32m+[m[32mimport com.IMS.dto.AIResponse;[m
+[32m+[m[32mimport com.IMS.dto.BookDto;[m
+[32m+[m[32mimport com.IMS.entity.Book;[m
+[32m+[m[32mimport com.IMS.repository.BookRepository;[m
+[32m+[m[32mimport org.modelmapper.ModelMapper;[m
+[32m+[m[32mimport org.springframework.http.HttpEntity;[m
+[32m+[m[32mimport org.springframework.http.HttpHeaders;[m
+[32m+[m[32mimport org.springframework.http.ResponseEntity;[m
+[32m+[m[32mimport org.springframework.stereotype.Service;[m
+[32m+[m[32mimport org.springframework.web.client.RestTemplate;[m
+[32m+[m
+[32m+[m[32mimport java.util.*;[m
+[32m+[m
+[32m+[m[32m@Service[m
+[32m+[m[32mpublic class BookService {[m
+[32m+[m
+[32m+[m[32m    private final String apiKey = System.getenv("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");[m
+[32m+[m
+[32m+[m[32m    private final RestTemplate restTemplate;[m
+[32m+[m
+[32m+[m[32m    private final BookRepository bookRepository;[m
+[32m+[m[32m    private final ModelMapper modelMapper;[m
+[32m+[m
+[32m+[m[32m    public BookService(RestTemplate restTemplate, BookRepository bookRepository, ModelMapper modelMapper) {[m
+[32m+[m[32m        this.restTemplate = restTemplate;[m
+[32m+[m[32m        this.bookRepository = bookRepository;[m
+[32m+[m[32m        this.modelMapper = modelMapper;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public Book saveBook(BookDto bookDto) {[m
+[32m+[m[32m        Book book = modelMapper.map(bookDto, Book.class);[m
+[32m+[m[32m        return bookRepository.save(book);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public List<Book> getAllBooks() {[m
+[32m+[m[32m        return bookRepository.findAll();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public Optional<Book> getBookById(Long id) {[m
+[32m+[m[32m        return bookRepository.findById(id);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public Optional<Book> updateBook(Long id, BookDto bookDto) {[m
+[32m+[m[32m        return bookRepository.findById(id).map(book -> {[m
+[32m+[m[32m            modelMapper.map(bookDto, book);[m
+[32m+[m[32m            return bookRepository.save(book);[m
+[32m+[m[32m        });[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public boolean deleteBook(Long id) {[m
+[32m+[m[32m        if (bookRepository.existsById(id)) {[m
+[32m+[m[32m            bookRepository.deleteById(id);[m
+[32m+[m[32m            return true;[m
+[32m+[m[32m        }[m
+[32m+[m[32m        return false;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public List<Book> searchBooks(String title, String author) {[m
+[32m+[m[32m        return bookRepository.findByTitleContainingIgnoreCaseAndAuthorContainingIgnoreCase(title, author);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String generateAiSummary(String prompt) {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            String aiApiUrl = "https://api.openai.com/v1/chat/completions";[m
+[32m+[m
+[32m+[m[32m            HttpEntity<Map<String, Object>> request = getMapHttpEntity(prompt);[m
+[32m+[m[32m            ResponseEntity<String> response = restTemplate.postForEntity(aiApiUrl, request, String.class);[m
+[32m+[m
+[32m+[m[32m            System.out.println("AI API Response: " + response.getBody()); // Debugging[m
+[32m+[m
+[32m+[m[32m            return response.getBody(); // Return actual AI response[m
+[32m+[m
+[32m+[m[32m        } catch (Exception e) {[m
+[32m+[m[32m            System.err.println("Error calling AI service: " + e.getMessage());[m
+[32m+[m[32m            return "AI service is currently unavailable.";[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    private static HttpEntity<Map<String, Object>> getMapHttpEntity(String prompt) {[m
+[32m+[m[32m        Map<String, Object> requestBody = new HashMap<>();[m
+[32m+[m[32m        requestBody.put("model", "gpt-4-turbo");[m
+[32m+[m[32m        requestBody.put("prompt", prompt);[m
+[32m+[m[32m        requestBody.put("max_tokens", 50);[m
+[32m+[m
+[32m+[m[32m        // Prepare headers[m
+[32m+[m[32m        HttpHeaders headers = new HttpHeaders();[m
+[32m+[m[32m        headers.set("Authorization", "Bearer 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"); // Replace with actual API key[m
+[32m+[m[32m        headers.set("Content-Type", "application/json");[m
+[32m+[m
+[32m+[m[32m        // Send request[m
+[32m+[m[32m        return new HttpEntity<>(requestBody, headers);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m    public AIResponse getBookAiInsights(Long id) {[m
+[32m+[m[32m        Optional<Book> bookOpt = bookRepository.findById(id);[m
+[32m+[m[32m        if (bookOpt.isEmpty()) {[m
+[32m+[m[32m            throw new RuntimeException("Book not found");[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        Book book = bookOpt.get();[m
+[32m+[m[32m        String prompt = "Generate a tagline for a book titled '" + book.getTitle() +[m
+[32m+[m[32m                "' by " + book.getAuthor() + ": " + book.getDescription();[m
+[32m+[m[32m        String aiSummary = generateAiSummary(prompt);[m
+[32m+[m
+[32m+[m[32m        return new AIResponse(book.getTitle(), book.getAuthor(),[m
+[32m+[m[32m                book.getDescription(), aiSummary);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m}[m
